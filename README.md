@@ -1,7 +1,7 @@
 # **Mini NPU Simulator 개발 개요**
 본 프로젝트는 컴퓨터가 시각적 형태를 인식하는 원리인 **MAC(Multiply-Accumulate) 연산**을 이해하고, 이를 통해 입력된 패턴이 특정 필터(십자가 또는 X)와 얼마나 유사한지 판별하는 시뮬레이터를 개발하는 것입니다.
 
-단순 연산을 넘어, 실제 AI 모델이 겪는 **부동소수점 오차 처리**, **데이터 정규화**, 그리고 크기 증가에 따른 **시간 복잡도 <code>O(N<sup>2</sup>)</code> 분석**까지 포함하는 종합적인 소프트웨어 테스트 및 성능 분석합니다.
+단순 연산을 넘어, 실제 AI 모델이 겪는 **부동소수점 오차 처리**, **데이터 정규화**, 그리고 크기 증가에 따른 **시간 복잡도 <code>O(N<sup>2</sup>)</code> 분석**까지 포함하는 종합적인 소프트웨어 테스트 및 성능 분석입니다. 
 
 # ☑️ **단계별 체크리스트**
 **1단계: 핵심 연산 로직 및 데이터 구조 설계**
@@ -28,3 +28,58 @@
 **5단계: 최종 제출물 정리**
 - [ ] README.md 작성: 실행 방법, 구현 요약(정규화, 오차 정책), 실패 원인 분석 및 시간 복잡도 <code>O(N<sup>2</sup>)</code> 분석 리포트(10줄 이상) 포함.
 - [ ] 코드 정리: Python 3.8 이상 환경 준수 및 외부 라이브러리 사용 여부 최종 확인.
+
+<br>
+
+# **1. 핵심 연산 로직 구현하기 (main.py)**
+## (1) MAC 연산 함수 만들기
+```bash
+$ touch main.py
+```
+```python
+def calculate_mac(pattern, filter_data):
+    # 패턴과 필터를 받아서 MAC(Multiply-Accumulate) 연산을 수행
+    # pattern: n x n 크기의 2차원 리스트
+    # filter_data: n x n 크기의 2차원 리스트
+    
+    total_score = 0.0
+    n = len(pattern) # 배열의 크기 (예: 3, 5, 13...)
+
+    # 행(row)을 돌고, 그 안에서 열(column)을 돎
+    for i in range(n):
+        for j in range(n):
+            # 같은 위치의 숫자끼리 곱해서 누적해서 더함
+            total_score += pattern[i][j] * filter_data[i][j]
+            
+    return total_score
+```
+
+## (2) 부동소수점 오차 처리 정책 적용
+```python
+def compare_scores(score_a, score_b):
+    # 두 점수를 비교하여 판정 결과를 반환
+    
+    # 허용 오차(epsilon): 1e-9
+    epsilon = 1e-9 # 0.000000001
+    
+    # 두 값의 차이의 절대값이 epsilon보다 작으면 '동점'으로 처리
+    if abs(score_a - score_b) < epsilon:
+        return "UNDECIDED"
+    elif score_a > score_b:
+        return "A"
+    else:
+        return "B"
+```
+
+## (3) 라벨 정규화(표준화) 점수
+```python
+def normalize_label(label):
+    # 입력된 라벨을 'Cross' 또는 'X'로 통일
+    label = str(label).lower().strip() # 소문자로 바꾸고 공백 제거
+    
+    if label in ['+', 'cross']:
+        return "Cross"
+    elif label in ['x']:
+        return "X"
+    return label # 해당하지 않는 경우 그대로 반환
+```
