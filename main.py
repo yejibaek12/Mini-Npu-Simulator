@@ -1,3 +1,5 @@
+import time
+
 # MAC 연산 함수 만들기
 def calculate_mac(pattern, filter_data):
     # 패턴과 필터를 받아서 MAC(Multiply-Accumulate) 연산을 수행

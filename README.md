@@ -83,3 +83,76 @@ def normalize_label(label):
         return "X"
     return label # 해당하지 않는 경우 그대로 반환
 ```
+
+<br>
+
+# **2. 모드 1 구현하기 (사용자 입력 및 검증)**
+- 사용자가 실수로 숫자를 적게 입력하거나 문자를 입력했을 때 프로그램이 꺼지지 않게함
+- 입력 형식 오류 시 안내 문구 출력 및 재입력 유도
+## (1) 3x3 배열을 입력받는 함수
+```python
+def input_3x3_matrix(name):
+    print(f"{name} (3줄 입력, 공백 구분)")
+    matrix = []
+    while len(matrix) < 3:
+        try:
+            line = input().split()
+            # 숫자가 3개가 아니면 에러 발생
+            if len(line) != 3:
+                raise ValueError("입력 형식 오류: 각 줄에 3개의 숫자를 공백으로 구분해 입력하세요.")
+            
+            # 문자열을 숫자로 변환해서 한 줄(row) 만들기
+            row = [float(x) for x in line]
+            matrix.append(row)
+        except ValueError as e:
+            print(e)
+            print("다시 입력해 주세요.")
+    return matrix
+```
+
+## (2) 시간 측정 기능 (성능 분석 맛보기)
+```python
+import time
+
+def measure_performance(pattern, filter_data):
+    # 10회 반복 측정하여 평균 시간 계산 [cite: 156]
+    start_time = time.perf_counter()
+    for _ in range(10):
+        calculate_mac(pattern, filter_data)
+    end_time = time.perf_counter()
+    
+    # 초 단위 차이를 ms(밀리초)로 변환 [cite: 155]
+    avg_time_ms = ((end_time - start_time) / 10) * 1000
+    return avg_time_ms
+```
+
+## (3) 모드 1 실행 로직 완성
+```python
+def run_mode_1():
+    print("\n# [1] 필터 입력")
+    filter_a = input_3x3_matrix("필터 A")
+    filter_b = input_3x3_matrix("필터 B")
+    
+    print("\n# [2] 패턴 입력")
+    pattern = input_3x3_matrix("패턴")
+    
+    # 1. MAC 연산 수행
+    score_a = calculate_mac(pattern, filter_a)
+    score_b = calculate_mac(pattern, filter_b)
+    
+    # 2. 성능 측정
+    avg_time = measure_performance(pattern, filter_a) # 하나만 측정해도 무방
+    
+    # 3. 결과 판정
+    result = compare_scores(score_a, score_b)
+    
+    print("\n# [3] MAC 결과")
+    print(f"A 점수: {score_a}")
+    print(f"B 점수: {score_b}")
+    print(f"연산 시간(평균/10회): {avg_time:.3f} ms")
+    
+    if result == "UNDECIDED":
+        print(f"판정: 판정 불가 (|A-B| < 1e-9)") [cite: 260]
+    else:
+        print(f"판정: {result}")
+```
