@@ -94,9 +94,7 @@ def load_data(file_path):
         return None
 
 def run_mode_2(data):
-    """모드 2 실행 로직"""
     if not data: return
-    
     filters = data.get('filters', {})
     patterns = data.get('patterns', [])
     
@@ -104,21 +102,45 @@ def run_mode_2(data):
     pass_count = 0
     
     for p in patterns:
-        expected = normalize_label(p['label'])
-        
-        # 필터 데이터 존재 여부 확인 후 연산
-        score_cross = calculate_mac(p['data'], filters['Cross'])
-        score_x = calculate_mac(p['data'], filters['X'])
-        
-        pred_code = compare_scores(score_cross, score_x)
-        actual = "Cross" if pred_code == "A" else "X" if pred_code == "B" else "UNDECIDED"
-        
-        is_pass = (actual == expected)
-        if is_pass: pass_count += 1
-        
-        status = "PASS" if is_pass else "FAIL"
-        print(f"ID {p['id']}: {status} (예상:{expected}, 실제:{actual})")
-    
+        try:
+            # 1. 키(ID)에서 N 추출 (예: size_3_01 -> 3)
+            # '_'로 나누고 두 번째 항목('3')을 가져옴
+            n = int(p['id'].split('_')[1])
+            
+            # 2. 크기 검증: 패턴 자체가 NxN인지 확인
+            if len(p['data']) != n:
+                raise ValueError(f"패턴 데이터 크기 불일치 (ID상 {n}x{n}이나 실제 {len(p['data'])}줄)")
+
+            # 3. 필터 선택 (f-string 사용)
+            filter_cross_key = f"size_{n}_Cross"
+            filter_x_key = f"size_{n}_X"
+            
+            if filter_cross_key not in filters or filter_x_key not in filters:
+                raise KeyError(f"필터 없음: size_{n} 관련 필터를 찾을 수 없습니다.")
+
+            # 4. 필터 크기 검증
+            if len(filters[filter_cross_key]) != n:
+                 raise ValueError(f"필터 크기 불일치 (필요: {n}x{n})")
+
+            # 5. 계산 및 판정
+            expected = normalize_label(p['label'])
+            score_cross = calculate_mac(p['data'], filters[filter_cross_key])
+            score_x = calculate_mac(p['data'], filters[filter_x_key])
+            
+            pred_code = compare_scores(score_cross, score_x)
+            actual = "Cross" if pred_code == "A" else "X" if pred_code == "B" else "UNDECIDED"
+            
+            is_pass = (actual == expected)
+            if is_pass: pass_count += 1
+            
+            status = "PASS" if is_pass else "FAIL"
+            print(f"ID {p['id']}: {status} (예상:{expected}, 실제:{actual})")
+
+        except (ValueError, KeyError, IndexError) as e:
+            # 6. 에러 발생 시 프로그램 종료 대신 FAIL 처리 및 사유 출력
+            print(f"ID {p['id']}: FAIL (사유: {e})")
+            continue # 다음 패턴으로 넘어감
+
     print(f"\n최종 결과: {pass_count}/{len(patterns)} 통과")
 
 # ==========================================
