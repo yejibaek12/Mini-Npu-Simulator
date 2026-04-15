@@ -203,3 +203,50 @@ def run_mode_2(data):
         
         print(f"패턴 ID: {p['id']} | 결과: {'PASS' if is_pass else 'FAIL'} (예상: {expected}, 실제: {actual})")
 ```
+
+<br>
+
+# **4. 성능 분석 및 리포트 작성**
+## (1) 크기별 성능 측정 로직
+```python 
+ def analyze_performance_by_size():
+    # 측정할 크기들 (N x N)
+    sizes = [3, 5, 13, 25]
+    performance_results = []
+
+    for n in sizes:
+        # 1. 테스트용 더미(Dummy) 데이터 생성
+        # 모든 칸이 0.5인 n x n 배열을 만듦
+        pattern = [[0.5 for _ in range(n)] for _ in range(n)]
+        filter_data = [[0.5 for _ in range(n)] for _ in range(n)]
+        
+        # 2. 앞서 만든 함수로 평균 시간 측정
+        avg_time = measure_performance(pattern, filter_data)
+        
+        # 3. 결과 저장 (크기, 평균 시간, 실제 연산 횟수 N^2)
+        performance_results.append({
+            'size': f"{n}x{n}",
+            'time': avg_time,
+            'ops': n * n
+        })
+    
+    return performance_results
+```
+
+## (2) 시간 복잡도 $O(N^2)$ 리포트 이해하기
+- N=3일 때: 연산 횟수는 3×3=9번
+- N=25일 때: 연산 횟수는 25×25=625번
+- 분석 포인트: 가로/세로 크기는 약 8배 커졌지만, 실제 연산량은 약 70배(625÷9) 늘어난다. 
+
+## (3) 결과 요약 및 출력
+```python
+def print_report(results):
+    print("\n" + "="*45)
+    print(f"{'Size (NxN)':<15} | {'Avg Time (ms)':<15} | {'Ops (N^2)':<10}")
+    print("-" * 45)
+    
+    for res in results:
+        print(f"{res['size']:<15} | {res['time']:<15.4f} | {res['ops']:<10}")
+    print("="*45)
+```
+
