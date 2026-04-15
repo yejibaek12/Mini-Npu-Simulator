@@ -38,227 +38,60 @@
 
 <br>
 
-# **1. 핵심 연산 로직 구현하기 (main.py)**
-## (1) MAC 연산 함수 만들기
-💡 **MAC 연산?** 
-- 두 행렬의 같은 위치에 있는 값끼리 곱한(Multiply) 후, 그 결과들을 모두 더해(Accumulate) 하나의 점수로 만드는 과정
+# **1. 실행방법**
+## (1) 환경 준비
+Python 3.8 이상이 설치되어 있어야 하며, 별도의 외부 라이브러리(NumPy 등)는 필요하지 않습니다.
+
+## (2) 파일 위치
+`main.py`와 `data.json`은 같은 폴더 내에 위치해야 합니다.
+
+## (3) 프로그램 실행
 ```bash
-$ touch main.py
+   python main.py
 ```
-```python
-def calculate_mac(pattern, filter_data):
-    # pattern: n x n 크기의 2차원 리스트
-    # filter_data: n x n 크기의 2차원 리스트
-    
-    total_score = 0.0
-    n = len(pattern) # 배열의 크기 (예: 3, 5, 13...)
-
-    # 행(row)을 돌고, 그 안에서 열(column)을 돎
-    for i in range(n):
-        for j in range(n):
-            # 같은 위치의 숫자끼리 곱해서 누적해서 더함
-            total_score += pattern[i][j] * filter_data[i][j]
-            
-    return total_score
-```
-
-## (2) 부동소수점 오차 처리 정책 적용
-```python
-def compare_scores(score_a, score_b):
-    # 두 점수를 비교하여 판정 결과를 반환
-    
-    # 허용 오차(epsilon): 1e-9
-    epsilon = 1e-9 # 0.000000001
-    
-    # 두 값의 차이의 절대값이 epsilon보다 작으면 '동점'으로 처리
-    if abs(score_a - score_b) < epsilon:
-        return "UNDECIDED"
-    elif score_a > score_b:
-        return "A"
-    else:
-        return "B"
-```
-
-## (3) 라벨 정규화(표준화) 점수
-```python
-def normalize_label(label):
-    # 입력된 라벨을 'Cross' 또는 'X'로 통일
-    label = str(label).lower().strip() # 소문자로 바꾸고 공백 제거
-    
-    if label in ['+', 'cross']:
-        return "Cross"
-    elif label in ['x']:
-        return "X"
-    return label # 해당하지 않는 경우 그대로 반환
-```
+## (4) 모드 선택
+실행 후 콘솔창의 안내에 따라 번호를 입력합니다.
+- `1`: 3x3 크기의 데이터를 직접 입력하여 분석합니다.
+- `2`: `data.json` 파일을 읽어 일괄 분석을 수행합니다.
+- `3`: 크기별 성능 측정 리포트를 출력합니다.
 
 <br>
 
-# **2. 모드 1 구현하기 (사용자 입력 및 검증)**
-- 사용자가 실수로 숫자를 적게 입력하거나 문자를 입력했을 때 프로그램이 꺼지지 않게함
-- 입력 형식 오류 시 안내 문구 출력 및 재입력 유도
-## (1) 3x3 배열을 입력받는 함수
-```python
-def input_3x3_matrix(name):
-    print(f"{name} (3줄 입력, 공백 구분)")
-    matrix = []
-    while len(matrix) < 3:
-        try:
-            line = input().split()
-            # 숫자가 3개가 아니면 에러 발생
-            if len(line) != 3:
-                raise ValueError("입력 형식 오류: 각 줄에 3개의 숫자를 공백으로 구분해 입력하세요.")
-            
-            # 문자열을 숫자로 변환해서 한 줄(row) 만들기
-            row = [float(x) for x in line]
-            matrix.append(row)
-        except ValueError as e:
-            print(e)
-            print("다시 입력해 주세요.")
-    return matrix
-```
+# **2. 구현 요약**
+**MAC 연산**
+- 이중 반복문을 사용하여 입력 패턴과 필터의 동일 인덱스 값을 곱하고 누적 합산하는 방식으로 구현되었습니다.
 
-## (2) 시간 측정 기능
-```python
-import time
+**라벨 정규화** 
+- `+`, `cross`, `x` 등 다양한 형태의 입력을 `normalize_label` 함수를 통해 `Cross` 및 `X`로 표준화하여 데이터 불일치를 방지합니다.
 
-def measure_performance(pattern, filter_data):
-    # 10회 반복 측정하여 평균 시간 계산
-    start_time = time.perf_counter()
-    for _ in range(10):
-        calculate_mac(pattern, filter_data)
-    end_time = time.perf_counter()
-    
-    # 초 단위 차이를 ms(밀리초)로 변환
-    avg_time_ms = ((end_time - start_time) / 10) * 1000
-    return avg_time_ms
-```
-
-## (3) 모드 1 실행 로직 완성
-```python
-def run_mode_1():
-    print("\n# [1] 필터 입력")
-    filter_a = input_3x3_matrix("필터 A")
-    filter_b = input_3x3_matrix("필터 B")
-    
-    print("\n# [2] 패턴 입력")
-    pattern = input_3x3_matrix("패턴")
-    
-    # 1. MAC 연산 수행
-    score_a = calculate_mac(pattern, filter_a)
-    score_b = calculate_mac(pattern, filter_b)
-    
-    # 2. 성능 측정
-    avg_time = measure_performance(pattern, filter_a) # 하나만 측정해도 무방
-    
-    # 3. 결과 판정
-    result = compare_scores(score_a, score_b)
-    
-    print("\n# [3] MAC 결과")
-    print(f"A 점수: {score_a}")
-    print(f"B 점수: {score_b}")
-    print(f"연산 시간(평균/10회): {avg_time:.3f} ms")
-    
-    if result == "UNDECIDED":
-        print(f"판정: 판정 불가 (|A-B| < 1e-9)") [cite: 260]
-    else:
-        print(f"판정: {result}")
-```
-<br>
-
- # **3. 모드 2: JSON 데이터 분석**
- ## (1) JSON 파일 읽기 (데이터 불러오기)
-```python
-import json
-
-def load_data(data.json)
-    with open(data.json, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    return data
-```
-
-## (2) 데이터 검증 및 일괄 판정 (핵심 로직)
-```python
-def run_mode_2(data):
-    filters = data['filters']    # 필터 정보들 (Cross, X 등)
-    patterns = data['patterns']  # 판정해야 할 패턴들
-    
-    results = [] # 결과를 저장할 빈 리스트
-
-    for p in patterns:
-        # 1. 라벨 정규화 (예: 'cross' -> 'Cross')
-        expected = normalize_label(p['label'])
-        
-        # 2. 필터 데이터 가져오기 (이름에 맞는 필터 선택)
-        # 예시: 'Cross' 필터와 'X' 필터의 데이터를 각각 가져옴
-        score_cross = calculate_mac(p['data'], filters['Cross'])
-        score_x = calculate_mac(p['data'], filters['X'])
-        
-        # 3. 점수 비교 및 판정
-        prediction_code = compare_scores(score_cross, score_x)
-        
-        # 4. 판정 코드를 실제 이름으로 변환
-        if prediction_code == "A":
-            actual = "Cross"
-        elif prediction_code == "B":
-            actual = "X"
-        else:
-            actual = "UNDECIDED"
-
-        # 5. 정답(expected)과 결과(actual) 비교
-        is_pass = (actual == expected)
-        results.append(is_pass)
-        
-        print(f"패턴 ID: {p['id']} | 결과: {'PASS' if is_pass else 'FAIL'} (예상: {expected}, 실제: {actual})")
-```
+**동점 처리 정책**
+- 부동소수점 오차를 고려하여 두 점수의 차이가 `1e-9(epsilon)` 미만일 경우 `UNDECIDED`로 판정하는 오차 허용 로직을 적용했습니다.
 
 <br>
 
-# **4. 성능 분석 및 리포트 작성**
-## (1) 크기별 성능 측정 로직
-```python 
- def analyze_performance_by_size():
-    # 측정할 크기들 (N x N)
-    sizes = [3, 5, 13, 25]
-    performance_results = []
+# 3. 결과 분석 리포트
 
-    for n in sizes:
-        # 1. 테스트용 더미(Dummy) 데이터 생성
-        # 모든 칸이 0.5인 n x n 배열을 만듦
-        pattern = [[0.5 for _ in range(n)] for _ in range(n)]
-        filter_data = [[0.5 for _ in range(n)] for _ in range(n)]
-        
-        # 2. 앞서 만든 함수로 평균 시간 측정
-        avg_time = measure_performance(pattern, filter_data)
-        
-        # 3. 결과 저장 (크기, 평균 시간, 실제 연산 횟수 N^2)
-        performance_results.append({
-            'size': f"{n}x{n}",
-            'time': avg_time,
-            'ops': n * n
-        })
-    
-    return performance_results
-```
+## (1) FAIL 케이스 원인 분석
+**분석 결과**
+- 현재 제공된 `data.json`의 모든 패턴이 정규화된 필터와 정확히 일치하여 **0 FAIL(100% PASS)**을 기록했습니다.
 
-## (2) 시간 복잡도 $O(N^2)$ 리포트 이해하기
-- N=3일 때: 연산 횟수는 3×3=9번
-- N=25일 때: 연산 횟수는 25×25=625번
-- 분석 포인트: 가로/세로 크기는 약 8배 커졌지만, 실제 연산량은 약 70배(625÷9) 늘어난다. 
+**성공 요인(0 FAIL의 이유)**
 
-## (3) 결과 요약 및 출력
-```python
-def print_report(results):
-    print("\n" + "="*45)
-    print(f"{'Size (NxN)':<15} | {'Avg Time (ms)':<15} | {'Ops (N^2)':<10}")
-    print("-" * 45)
-    
-    for res in results:
-        print(f"{res['size']:<15} | {res['time']:<15.4f} | {res['ops']:<10}")
-    print("="*45)
-```
+**라벨 정규화 이슈 해결**
+- 입력 데이터의 라벨이 +, cross, Cross 등 다양한 형식으로 존재하더라도, normalize_label 함수를 통해 소문자 변환 및 공백 제거 후 표준화된 이름('Cross', 'X')으로 통일하여 비교 정확도를 높였습니다.
 
-<br>
+**부동소수점 오차 처리**
+- 이진법 연산 특성상 발생하는 미세한 소수점 오차를 해결하기 위해, 두 점수의 차이가 허용 오차(epsilon=1e-9) 미만일 경우 UNDECIDED로 처리하는 정책을 적용하여 판정 오류를 차단했습니다.
+
+## (2) 성능 표 해석 및 $O(N^2)$ 분석
+**이론적 시간 복잡도 근거**
+- `calculate_mac` 함수는 $N \times N$ 배열을 순회하기 위해 이중 루프를 사용하므로 연산 횟수는 $N^2$에 비례합니다.
+
+**실측 결과와의 연결**
+- $3 \times 3$ (9회 연산) 대비 $25 \times 25$ (625회 연산)는 데이터 크기가 약 8배 증가할 때 연산량은 약 **70배** 증가합니다.
+- 실제 측정된 평균 시간(ms) 역시 연산 횟수($N^2$)의 증가 추세와 일치하며, 이는 본 알고리즘이 **제곱 시간 복잡도($O(N^2)$)**를 가짐을 실증적으로 증명합니다.
+
+===
 
 # **5. 최종 분석 리포트**
 ## (1) 실패 원인 분석
@@ -270,7 +103,7 @@ def print_report(results):
 - **현상**: 컴퓨터의 이진법 연산 특성상 소수점 계산 시 미세한 오차가 발생하여, 이론적으로 같은 값임에도 불구하고 score_a == score_b가 거짓(False)이 될 수 있다.
 - **해결**: 두 점수의 차이(abs(a - b))가 허용 오차인 epsilon(1e-9)보다 작을 경우 동일한 점수로 간주하여 `UNDECIDED`를 반환하는 오차 허용 정책을 적용했습니다.
 
-**시간 복잡도 분석 ($O(N^2)$)**
+## (2) 시간 복잡도 분석 ($O(N^2)$)
 
 ① **알고리즘 분석**
 - 본 시뮬레이터의 핵심인 `calculate_mac` 함수는 N×N 크기의 2차원 배열을 처리하기 위해 **이중 반복문**을 사용한다. 

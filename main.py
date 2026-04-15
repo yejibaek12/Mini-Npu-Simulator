@@ -136,7 +136,7 @@ def run_mode_2(data):
             print(f"ID {p['id']}: FAIL (사유: {e})")
             continue
 
-    print(f"\n최종 결과: {pass_count}/{len(patterns)} 통과")
+    print(f"\n최종 결과: 총 {len(patterns)}개 | 통과: {pass_count} | 실패: {len(patterns) - pass_count}")
 
 # ==========================================
 # 4단계: 성능 분석 리포트
@@ -179,7 +179,9 @@ if __name__ == "__main__":
         run_mode_1()
     elif choice == '2':
         data = load_data('data.json')
-        if data: run_mode_2(data)
+        if data: 
+            run_mode_2(data)
+            analyze_performance_by_size() # 분석 후 성능 리포트 자동 출력
     elif choice == '3':
         analyze_performance_by_size()
     else:
