@@ -45,7 +45,7 @@ def input_3x3_matrix(name):
         try:
             line = input().split()
             if len(line) != 3:
-                raise ValueError("입력 형식 오류: 각 줄에 3개의 숫자를 입력하세요.")
+                raise ValueError("입력 형식 오류: 각 줄에 3개의 숫자를 공백으로 구분해 입력하세요.")
             row = [float(x) for x in line]
             matrix.append(row)
         except ValueError as e:
