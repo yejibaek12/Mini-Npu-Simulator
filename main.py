@@ -103,29 +103,25 @@ def run_mode_2(data):
     
     for p in patterns:
         try:
-            # 1. 키(ID)에서 N 추출 (예: size_3_01 -> 3)
-            # '_'로 나누고 두 번째 항목('3')을 가져옴
+            # 1. 키(ID)에서 N 추출
             n = int(p['id'].split('_')[1])
             
-            # 2. 크기 검증: 패턴 자체가 NxN인지 확인
-            if len(p['data']) != n:
-                raise ValueError(f"패턴 데이터 크기 불일치 (ID상 {n}x{n}이나 실제 {len(p['data'])}줄)")
-
-            # 3. 필터 선택 (f-string 사용)
+            # 2. 필터 선택
             filter_cross_key = f"size_{n}_Cross"
             filter_x_key = f"size_{n}_X"
             
-            if filter_cross_key not in filters or filter_x_key not in filters:
-                raise KeyError(f"필터 없음: size_{n} 관련 필터를 찾을 수 없습니다.")
+            # 3. 데이터 및 라벨 가져오기 (input, expected 키 사용)
+            input_data = p['input']
+            label_data = p['expected']
+            
+            # 4. 크기 검증
+            if len(input_data) != n:
+                raise ValueError(f"크기 불일치 (필요: {n}x{n})")
 
-            # 4. 필터 크기 검증
-            if len(filters[filter_cross_key]) != n:
-                 raise ValueError(f"필터 크기 불일치 (필요: {n}x{n})")
-
-            # 5. 계산 및 판정
-            expected = normalize_label(p['label'])
-            score_cross = calculate_mac(p['data'], filters[filter_cross_key])
-            score_x = calculate_mac(p['data'], filters[filter_x_key])
+            # 5. 연산 및 판정
+            expected = normalize_label(label_data)
+            score_cross = calculate_mac(input_data, filters[filter_cross_key])
+            score_x = calculate_mac(input_data, filters[filter_x_key])
             
             pred_code = compare_scores(score_cross, score_x)
             actual = "Cross" if pred_code == "A" else "X" if pred_code == "B" else "UNDECIDED"
@@ -136,10 +132,9 @@ def run_mode_2(data):
             status = "PASS" if is_pass else "FAIL"
             print(f"ID {p['id']}: {status} (예상:{expected}, 실제:{actual})")
 
-        except (ValueError, KeyError, IndexError) as e:
-            # 6. 에러 발생 시 프로그램 종료 대신 FAIL 처리 및 사유 출력
+        except (ValueError, KeyError) as e:
             print(f"ID {p['id']}: FAIL (사유: {e})")
-            continue # 다음 패턴으로 넘어감
+            continue
 
     print(f"\n최종 결과: {pass_count}/{len(patterns)} 통과")
 
