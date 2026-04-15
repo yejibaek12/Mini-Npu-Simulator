@@ -3,6 +3,13 @@
 
 단순 연산을 넘어, 실제 AI 모델이 겪는 **부동소수점 오차 처리**, **데이터 정규화**, 그리고 크기 증가에 따른 **시간 복잡도 <code>O(N<sup>2</sup>)</code> 분석**까지 포함하는 종합적인 소프트웨어 테스트 및 성능 분석입니다. 
 
+💡 **CPU/NPU 비교**
+| 구분 | CPU(Central Processing Unit) | NPU(Neural Processing Unit) 
+| :-- | :-- | :-- |
+| 핵심 역할 | 컴퓨터의 모든 명령을 처리하는 두뇌 | AI 연산(신경망 처리)만 전담하는 전문가 |
+| 강점 | 복잡한 논리 연산, 직렬 처리 | 단순 반복 연산, 병렬 처리 |
+| 비유 | 만능 해결사 (혼자서 다 함) | 대규모 작업 부대 (동시에 처리) |
+
 # ☑️ **단계별 체크리스트**
 **1단계: 핵심 연산 로직 및 데이터 구조 설계**
 - [ ] 데이터 저장 구조 정의: n×n 크기의 2차원 배열을 저장하고 특정 위치 $(x, y)$의 값을 읽고 쓸 수 있는 구조 설계.
@@ -33,12 +40,13 @@
 
 # **1. 핵심 연산 로직 구현하기 (main.py)**
 ## (1) MAC 연산 함수 만들기
+💡 **MAC 연산?** 
+- 두 행렬의 같은 위치에 있는 값끼리 곱한(Multiply) 후, 그 결과들을 모두 더해(Accumulate) 하나의 점수로 만드는 과정
 ```bash
 $ touch main.py
 ```
 ```python
 def calculate_mac(pattern, filter_data):
-    # 패턴과 필터를 받아서 MAC(Multiply-Accumulate) 연산을 수행
     # pattern: n x n 크기의 2차원 리스트
     # filter_data: n x n 크기의 2차원 리스트
     
@@ -249,4 +257,3 @@ def print_report(results):
         print(f"{res['size']:<15} | {res['time']:<15.4f} | {res['ops']:<10}")
     print("="*45)
 ```
-
