@@ -115,13 +115,13 @@ def input_3x3_matrix(name):
 import time
 
 def measure_performance(pattern, filter_data):
-    # 10회 반복 측정하여 평균 시간 계산 [cite: 156]
+    # 10회 반복 측정하여 평균 시간 계산
     start_time = time.perf_counter()
     for _ in range(10):
         calculate_mac(pattern, filter_data)
     end_time = time.perf_counter()
     
-    # 초 단위 차이를 ms(밀리초)로 변환 [cite: 155]
+    # 초 단위 차이를 ms(밀리초)로 변환
     avg_time_ms = ((end_time - start_time) / 10) * 1000
     return avg_time_ms
 ```
@@ -155,4 +155,51 @@ def run_mode_1():
         print(f"판정: 판정 불가 (|A-B| < 1e-9)") [cite: 260]
     else:
         print(f"판정: {result}")
+```
+<br>
+
+ # **3. 모드 2: JSON 데이터 분석**
+ ## (1) JSON 파일 읽기 (데이터 불러오기)
+```python
+import json
+
+def load_data(file_path)
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data
+```
+
+## (2) 데이터 검증 및 일괄 판정 (핵심 로직)
+```python
+def run_mode_2(data):
+    filters = data['filters']    # 필터 정보들 (Cross, X 등)
+    patterns = data['patterns']  # 판정해야 할 패턴들
+    
+    results = [] # 결과를 저장할 빈 리스트
+
+    for p in patterns:
+        # 1. 라벨 정규화 (예: 'cross' -> 'Cross')
+        expected = normalize_label(p['label'])
+        
+        # 2. 필터 데이터 가져오기 (이름에 맞는 필터 선택)
+        # 예시: 'Cross' 필터와 'X' 필터의 데이터를 각각 가져옴
+        score_cross = calculate_mac(p['data'], filters['Cross'])
+        score_x = calculate_mac(p['data'], filters['X'])
+        
+        # 3. 점수 비교 및 판정
+        prediction_code = compare_scores(score_cross, score_x)
+        
+        # 4. 판정 코드를 실제 이름으로 변환
+        if prediction_code == "A":
+            actual = "Cross"
+        elif prediction_code == "B":
+            actual = "X"
+        else:
+            actual = "UNDECIDED"
+
+        # 5. 정답(expected)과 결과(actual) 비교
+        is_pass = (actual == expected)
+        results.append(is_pass)
+        
+        print(f"패턴 ID: {p['id']} | 결과: {'PASS' if is_pass else 'FAIL'} (예상: {expected}, 실제: {actual})")
 ```
