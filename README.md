@@ -118,7 +118,7 @@ def input_3x3_matrix(name):
     return matrix
 ```
 
-## (2) 시간 측정 기능 (성능 분석 맛보기)
+## (2) 시간 측정 기능
 ```python
 import time
 
@@ -171,8 +171,8 @@ def run_mode_1():
 ```python
 import json
 
-def load_data(file_path)
-    with open(file_path, 'r', encoding='utf-8') as f:
+def load_data(data.json)
+    with open(data.json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     return data
 ```
@@ -257,3 +257,25 @@ def print_report(results):
         print(f"{res['size']:<15} | {res['time']:<15.4f} | {res['ops']:<10}")
     print("="*45)
 ```
+
+<br>
+
+# **5. 최종 분석 리포트**
+## (1) 실패 원인 분석
+**라벨 정규화 이슈**
+- **현상**: 입력 데이터(data.json)의 라벨이 '+', 'cross', 'Cross' 등 다양한 형식으로 존재할 경우, 단순 문자열 비교 시 판정 오류(FAIL)가 발생할 수 있다. 
+- **해결**: `normalize_label` 함수를 구현하여 모든 입력값을 소문자로 변환하고 공백을 제거한 뒤, 표준화된 이름('Cross', 'X')으로 통일하여 비교의 정확도를 높인다.
+
+**부동소수점 오차 처리**
+- **현상**: 컴퓨터의 이진법 연산 특성상 소수점 계산 시 미세한 오차가 발생하여, 이론적으로 같은 값임에도 불구하고 score_a == score_b가 거짓(False)이 될 수 있다.
+- **해결**: 두 점수의 차이(abs(a - b))가 허용 오차인 epsilon(1e-9)보다 작을 경우 동일한 점수로 간주하여 `UNDECIDED`를 반환하는 오차 허용 정책을 적용했습니다.
+
+**시간 복잡도 분석 ($O(N^2)$)**
+
+① **알고리즘 분석**
+- 본 시뮬레이터의 핵심인 `calculate_mac` 함수는 N×N 크기의 2차원 배열을 처리하기 위해 **이중 반복문**을 사용한다. 
+- 각 행(Row)을 N번 순회하고, 각 행 내부에서 열(Column)을 N번 순회하며 곱셈과 덧셈을 수행하므로, 이론적 시간 복잡도는 $O(N^2)$에 해당한다.
+
+② **성능 측정 결과 해석**
+- 성능 측정 결과, 데이터의 크기(N)가 커짐에 따라 실행 시간이 단순 선형 방식이 아닌 제곱에 비례하여 급격히 증가하는 것을 확인할 수 있다.
+- 예를 들어 N=3일 때의 연산 횟수는 9회이지만, N=25일 때는 625회로, 입력 크기가 약 8배 증가할 때 연산량은 약 70배 가까이 늘어나는 특성을 보인다.
