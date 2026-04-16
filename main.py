@@ -1,6 +1,14 @@
 import time
 import json
 
+def load_data(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)  # json 라이브러리를 사용해 데이터를 가져옵니다.
+    except FileNotFoundError:
+        print(f"오류: {file_path} 파일을 찾을 수 없습니다.")
+        return None
+
 # ==========================================
 # 1단계: 핵심 연산 로직 (MAC 및 유틸리티)
 # ==========================================
