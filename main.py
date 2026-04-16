@@ -84,15 +84,6 @@ def run_mode_1():
 # 3단계: 모드 2 - JSON 일괄 분석
 # ==========================================
 
-def load_data(file_path):
-    """JSON 파일 로드"""
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"오류: {file_path} 파일을 찾을 수 없습니다.")
-        return None
-
 def run_mode_2(data):
     if not data: return
     filters = data.get('filters', {})
@@ -100,7 +91,8 @@ def run_mode_2(data):
     
     print("\n# [모드 2] JSON 일괄 분석 시작")
     pass_count = 0
-    
+    fail_list = [] # 1. 실패 케이스를 저장할 리스트 초기화
+
     for p in patterns:
         try:
             # 1. 키(ID)에서 N 추출
@@ -110,7 +102,7 @@ def run_mode_2(data):
             filter_cross_key = f"size_{n}_Cross"
             filter_x_key = f"size_{n}_X"
             
-            # 3. 데이터 및 라벨 가져오기 (input, expected 키 사용)
+            # 3. 데이터 및 라벨 가져오기
             input_data = p['input']
             label_data = p['expected']
             
@@ -127,16 +119,32 @@ def run_mode_2(data):
             actual = "Cross" if pred_code == "A" else "X" if pred_code == "B" else "UNDECIDED"
             
             is_pass = (actual == expected)
-            if is_pass: pass_count += 1
             
-            status = "PASS" if is_pass else "FAIL"
+            if is_pass: 
+                pass_count += 1
+                status = "PASS"
+            else:
+                # 판정 결과가 다를 경우 실패 리스트에 추가
+                status = "FAIL"
+                fail_list.append(f"{p['id']}: 판정 불일치 (예상:{expected}, 실제:{actual})")
+            
             print(f"ID {p['id']}: {status} (예상:{expected}, 실제:{actual})")
 
         except (ValueError, KeyError) as e:
-            print(f"ID {p['id']}: FAIL (사유: {e})")
+            # 로직 에러나 데이터 에러 발생 시 실패 리스트에 추가
+            error_msg = f"{p['id']}: FAIL (사유: {e})"
+            print(f"ID {error_msg}")
+            fail_list.append(error_msg)
             continue
 
+    # 2. 결과 요약 출력
     print(f"\n최종 결과: 총 {len(patterns)}개 | 통과: {pass_count} | 실패: {len(patterns) - pass_count}")
+    
+    # 3. 실패 목록이 있을 경우에만 상세 목록 출력
+    if fail_list:
+        print("\n[실패 케이스 목록]")
+        for fail in fail_list:
+            print(f"- {fail}")
 
 # ==========================================
 # 4단계: 성능 분석 리포트
