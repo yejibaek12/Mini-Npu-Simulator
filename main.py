@@ -89,9 +89,17 @@ def run_mode_2(data):
     filters = data.get('filters', {})
     patterns = data.get('patterns', [])
     
-    print("\n# [모드 2] JSON 일괄 분석 시작")
+    print("\n# [1] 필터 로드")
+    print("#----")
+    loaded_sizes = sorted(list(set(int(k.split('_')[1]) for k in filters.keys())))
+    for size in loaded_sizes:
+        print(f"✓ size_{size} 필터 로드 완료 (Cross, X)")
+    
+    print("\n# [2] 패턴 분석 (라벨 정규화 적용)")
+    print("#--------")
+    
     pass_count = 0
-    fail_list = [] # 1. 실패 케이스를 저장할 리스트 초기화
+    fail_list = [] # 실패 케이스 저장용
 
     for p in patterns:
         try:
@@ -106,16 +114,16 @@ def run_mode_2(data):
             input_data = p['input']
             label_data = p['expected']
             
-            # 4. 크기 검증
+            # 4. 크기 검증 
             if len(input_data) != n:
                 raise ValueError(f"크기 불일치 (필요: {n}x{n})")
 
             # 5. 연산 및 판정
-            expected = normalize_label(label_data)
+            expected = normalize_label(label_data) # 라벨 정규화
             score_cross = calculate_mac(input_data, filters[filter_cross_key])
             score_x = calculate_mac(input_data, filters[filter_x_key])
             
-            pred_code = compare_scores(score_cross, score_x)
+            pred_code = compare_scores(score_cross, score_x) # epsilon 기반 비교
             actual = "Cross" if pred_code == "A" else "X" if pred_code == "B" else "UNDECIDED"
             
             is_pass = (actual == expected)
@@ -124,25 +132,30 @@ def run_mode_2(data):
                 pass_count += 1
                 status = "PASS"
             else:
-                # 판정 결과가 다를 경우 실패 리스트에 추가
                 status = "FAIL"
                 fail_list.append(f"{p['id']}: 판정 불일치 (예상:{expected}, 실제:{actual})")
             
-            print(f"ID {p['id']}: {status} (예상:{expected}, 실제:{actual})")
+            print(f"{p['id']}")
+            print(f"Cross 점수: {score_cross}")
+            print(f"X 점수: {score_x}")
+            print(f"판정: {actual} | expected: {expected} | {status}")
+            print("-" * 20)
 
         except (ValueError, KeyError) as e:
-            # 로직 에러나 데이터 에러 발생 시 실패 리스트에 추가
             error_msg = f"{p['id']}: FAIL (사유: {e})"
-            print(f"ID {error_msg}")
+            print(error_msg)
             fail_list.append(error_msg)
             continue
 
-    # 2. 결과 요약 출력
-    print(f"\n최종 결과: 총 {len(patterns)}개 | 통과: {pass_count} | 실패: {len(patterns) - pass_count}")
+    # [3] 결과 요약 출력
+    print(f"\n# [3] 결과 요약")
+    print("#--")
+    print(f"총 테스트: {len(patterns)}개")
+    print(f"통과: {pass_count}개")
+    print(f"실패: {len(patterns) - pass_count}개")
     
-    # 3. 실패 목록이 있을 경우에만 상세 목록 출력
     if fail_list:
-        print("\n[실패 케이스 목록]")
+        print("\n실패 케이스:")
         for fail in fail_list:
             print(f"- {fail}")
 
