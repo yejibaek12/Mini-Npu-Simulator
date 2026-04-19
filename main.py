@@ -95,11 +95,12 @@ def run_mode_1():
 def run_mode_2(data):
     if not data: return
     filters = data.get('filters', {})
-    patterns = data.get('patterns', [])
+    patterns = data.get('patterns', {})  # JSON에서 patterns는 객체{}입니다.
     
     print("\n# [1] 필터 로드")
     print("#----")
-    loaded_sizes = sorted(list(set(int(k.split('_')[1]) for k in filters.keys())))
+    # 필터 사이즈 목록 추출 및 정렬
+    loaded_sizes = sorted([int(k.split('_')[1]) for k in filters.keys()])
     for size in loaded_sizes:
         print(f"✓ size_{size} 필터 로드 완료 (Cross, X)")
     
@@ -107,31 +108,36 @@ def run_mode_2(data):
     print("#--------")
     
     pass_count = 0
-    fail_list = [] # 실패 케이스 저장용
+    fail_list = []
 
-    for p in patterns:
+    # patterns.items()를 사용하여 ID와 컨텐츠를 동시에 가져옵니다.
+    for p_id, p_content in patterns.items():
         try:
-            # 1. 키(ID)에서 N 추출
-            n = int(p['id'].split('_')[1])
+            # 1. p_id(예: "size_3_1")에서 N 추출
+            n_val = int(p_id.split('_')[1])
+            size_key = f"size_{n_val}"
             
-            # 2. 필터 선택
-            filter_cross_key = f"size_{n}_Cross"
-            filter_x_key = f"size_{n}_X"
+            # 2. 계층 구조에 맞춰 필터 데이터 가져오기
+            if size_key not in filters:
+                raise KeyError(f"필터 그룹 {size_key}가 filters 내에 없습니다.")
             
-            # 3. 데이터 및 라벨 가져오기
-            input_data = p['input']
-            label_data = p['expected']
+            filter_cross = filters[size_key]["Cross"]
+            filter_x = filters[size_key]["X"]
             
-            # 4. 크기 검증 
-            if len(input_data) != n:
-                raise ValueError(f"크기 불일치 (필요: {n}x{n})")
+            # 3. 입력 데이터 및 기대 결과 추출
+            input_data = p_content['input']
+            label_data = p_content['expected']
+            
+            # 4. 크기 검증
+            if len(input_data) != n_val:
+                raise ValueError(f"크기 불일치 (필요: {n_val}x{n_val})")
 
             # 5. 연산 및 판정
-            expected = normalize_label(label_data) # 라벨 정규화
-            score_cross = calculate_mac(input_data, filters[filter_cross_key])
-            score_x = calculate_mac(input_data, filters[filter_x_key])
+            expected = normalize_label(label_data)
+            score_cross = calculate_mac(input_data, filter_cross)
+            score_x = calculate_mac(input_data, filter_x)
             
-            pred_code = compare_scores(score_cross, score_x) # epsilon 기반 비교
+            pred_code = compare_scores(score_cross, score_x)
             actual = "Cross" if pred_code == "A" else "X" if pred_code == "B" else "UNDECIDED"
             
             is_pass = (actual == expected)
@@ -141,16 +147,16 @@ def run_mode_2(data):
                 status = "PASS"
             else:
                 status = "FAIL"
-                fail_list.append(f"{p['id']}: 판정 불일치 (예상:{expected}, 실제:{actual})")
+                fail_list.append(f"{p_id}: 판정 불일치 (예상:{expected}, 실제:{actual})")
             
-            print(f"{p['id']}")
+            print(f"{p_id}")
             print(f"Cross 점수: {score_cross}")
             print(f"X 점수: {score_x}")
             print(f"판정: {actual} | expected: {expected} | {status}")
             print("-" * 20)
 
         except (ValueError, KeyError) as e:
-            error_msg = f"{p['id']}: FAIL (사유: {e})"
+            error_msg = f"{p_id}: FAIL (사유: {e})"
             print(error_msg)
             fail_list.append(error_msg)
             continue
@@ -177,16 +183,17 @@ def analyze_performance_by_size():
     results = []
 
     for n in sizes:
-        # 더미 데이터 생성 (리스트 컴프리헨션)
+        # 더미 데이터 생성
         pattern = [[0.5 for _ in range(n)] for _ in range(n)]
         filter_data = [[0.5 for _ in range(n)] for _ in range(n)]
         
         avg_time = measure_performance(pattern, filter_data)
-        results.append({'size': f"{n}x{n}", 'time': avg_time, 'ops': n * n})
+        # Ops 수식을 2 * n * n (곱셈+덧셈)으로 보정
+        results.append({'size': f"{n}x{n}", 'time': avg_time, 'ops': 2 * n * n})
     
     # 리포트 출력
     print("\n" + "="*45)
-    print(f"{'Size (NxN)':<15} | {'Avg Time (ms)':<15} | {'Ops (N^2)':<10}")
+    print(f"{'Size (NxN)':<15} | {'Avg Time (ms)':<15} | {'Ops (2*N^2)':<10}")
     print("-" * 45)
     for res in results:
         print(f"{res['size']:<15} | {res['time']:<15.4f} | {res['ops']:<10}")
