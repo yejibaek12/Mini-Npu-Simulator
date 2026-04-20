@@ -26,13 +26,14 @@ def run_mode_2(data):
     fail_list = []
 
     for p_id, p_content in patterns.items():
-        try:
+        try:            
             # 1. ID에서 기대하는 N 사이즈 추출 (예: size_5_fail -> 5)
             n_val = int(p_id.split('_')[1])
             size_key = f"size_{n_val}"
             
             input_data = p_content.get('input', [])
             expected = normalize_label(p_content.get('expected', ''))
+            
 
             # -------------------------------------------------------
             # [추가된 엄격한 크기 검증 로직]
@@ -80,17 +81,30 @@ def run_mode_2(data):
     if fail_list:
         for f in fail_list: print(f"- {f}")
 
+
 def analyze_performance_by_size():
-    """크기별 성능 리포트"""
+    """크기별 성능 측정 및 N^2(데이터 크기) 리포트 출력"""
     sizes = [3, 5, 13, 25]
-    print("\n" + "="*45)
-    print(f"{'Size (NxN)':<15} | {'Avg Time (ms)':<15}")
-    print("-" * 45)
+    
+    print("\n" + "="*50)
+    print(f"{'Size (NxN)':<12} | {'Avg Time (ms)':<15} | {'N^2 (Data)':<10}")
+    print("-" * 50)
+    
     for n in sizes:
+        # 테스트용 데이터 생성
         pattern = [[0.5]*n for _ in range(n)]
-        avg_time = measure_performance(pattern, pattern)
-        print(f"{f'{n}x{n}':<15} | {avg_time:<15.4f}")
-    print("="*45)
+        filter_data = [[0.5]*n for _ in range(n)]
+        
+        # 성능 측정
+        avg_time = measure_performance(pattern, filter_data)
+        
+        # 공지사항에 따른 N^2 출력 (총 데이터 개수)
+        n_squared = n ** 2
+        
+        print(f"{f'{n}x{n}':<12} | {avg_time:<15.4f} | {n_squared:<10,}")
+    
+    print("="*50)
+
 
 if __name__ == "__main__":
     while True:
